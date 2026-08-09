@@ -1,0 +1,28 @@
+from django.contrib.auth.models import AbstractUser, AbstractBaseUser
+from django.db import models
+from app.grok.models import GrokAccount
+
+
+class User(AbstractUser):
+    model_limit = models.JSONField(default=list, verbose_name="备注")
+    remark = models.TextField(blank=True, verbose_name="备注")
+    isolated_session = models.BooleanField(default=True, verbose_name="独立回话")
+    grok_pool_list = models.JSONField(default=list)
+    expired_date = models.DateField(blank=True, null=True, verbose_name="过期日期")
+    daily_quota = models.PositiveIntegerField(default=0, verbose_name="每日配额")
+    monthly_quota = models.PositiveIntegerField(default=0, verbose_name="每月配额")
+
+
+class VisitLog(models.Model):
+    # user = models.ForeignKey(User, db_constraint=False, on_delete=models.SET_NULL, null=True)
+    username = models.CharField(max_length=150, verbose_name="用户名")
+    grok_username = models.CharField(max_length=150, null=True, verbose_name="grok")
+    log_type = models.CharField(max_length=20, verbose_name="登录类型")
+    created_at = models.IntegerField(verbose_name="登录时间")
+    ip = models.GenericIPAddressField(verbose_name="登录IP")
+    user_agent = models.TextField(verbose_name="User-Agent")
+
+    @classmethod
+    def save_data(cls, data):
+        obj = cls.objects.create(**data)
+        return obj
