@@ -1,88 +1,79 @@
 services:
   grok-mirror:
     image: ${DOCKERHUB_IMAGE:-lisa666520/grok-mirror}:gateway
-    build:
-      context: .
-      dockerfile: Dockerfile
     ports:
-      - "${PORT:-41002}:${PORT:-41002}"
+      - "${PORT:-43002}:${PORT:-43002}"
     volumes:
       - ./data:/app/data
     environment:
-      # 服务器配置
-      - HOST=0.0.0.0
-      - PORT=${PORT:-41002}
-      - NO_PROXY=localhost,127.0.0.1,django,grok-mirror,cfbypass
-      - no_proxy=localhost,127.0.0.1,django,grok-mirror,cfbypass
-      # 数据库配置
-      - DATABASE_PATH=/app/data/grok_mirror.db
-      # 管理员配置
-      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}
-      - GATEWAY_ADMIN_SECRET=${GATEWAY_ADMIN_SECRET:?GATEWAY_ADMIN_SECRET must be set}
-      - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY:?CREDENTIAL_ENCRYPTION_KEY must be set}
-      - COOKIE_SECURE=${COOKIE_SECURE:-true}
-      - MIRROR_API_PREFIX=${MIRROR_API_PREFIX:-}
-      # 用户注册配置
-      - ALLOW_REGISTER=${ALLOW_REGISTER:-false}
-      - FREE_ACCOUNT_USERNAME=${FREE_ACCOUNT_USERNAME:-free_account}
-      # 站点层上游
-      - ADMIN_UPSTREAM=${ADMIN_UPSTREAM:-}
-      - DJANGO_UPSTREAM=http://django:8100
-      # Grok API 配置
-      - GROK_BASE_URL=${GROK_BASE_URL:-https://grok.com}
-      - GROK_CDN_BASE_URL=${GROK_CDN_BASE_URL:-https://cdn.grok.com}
-      - GROK_ASSETS_BASE_URL=${GROK_ASSETS_BASE_URL:-https://assets.grok.com}
-      # CloudFlare5sBypass 配置（使用 Docker 服务名作为主机名）
-      - CF_BYPASS_URL=http://cfbypass:8200
-      - CF_BYPASS_PROXY_SERVER=${CF_BYPASS_PROXY_SERVER:-}
-      - REQUEST_TIMEOUT_SECS=${REQUEST_TIMEOUT_SECS:-180}
-      # Rust 日志级别
-      - RUST_LOG=${RUST_LOG:-info}
+      HOST: "0.0.0.0"
+      PORT: "${PORT:-43002}"
+      NO_PROXY: "localhost,127.0.0.1,django,grok-mirror,cfbypass"
+      no_proxy: "localhost,127.0.0.1,django,grok-mirror,cfbypass"
+      DATABASE_PATH: "/app/data/grok_mirror.db"
+      ADMIN_USERNAME: "${ADMIN_USERNAME:-admin}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}"
+      GATEWAY_ADMIN_SECRET: "${GATEWAY_ADMIN_SECRET:?GATEWAY_ADMIN_SECRET must be set}"
+      CREDENTIAL_ENCRYPTION_KEY: "${CREDENTIAL_ENCRYPTION_KEY:?CREDENTIAL_ENCRYPTION_KEY must be set}"
+      COOKIE_SECURE: "${COOKIE_SECURE:-true}"
+      MIRROR_API_PREFIX: "${MIRROR_API_PREFIX:-}"
+      ALLOW_REGISTER: "${ALLOW_REGISTER:-false}"
+      FREE_ACCOUNT_USERNAME: "${FREE_ACCOUNT_USERNAME:-free_account}"
+      ADMIN_UPSTREAM: "${ADMIN_UPSTREAM:-}"
+      DJANGO_UPSTREAM: "http://django:43003"
+      GROK_BASE_URL: "${GROK_BASE_URL:-https://grok.com}"
+      GROK_CDN_BASE_URL: "${GROK_CDN_BASE_URL:-https://cdn.grok.com}"
+      GROK_ASSETS_BASE_URL: "${GROK_ASSETS_BASE_URL:-https://assets.grok.com}"
+      CF_BYPASS_URL: "http://cfbypass:43004"
+      CF_BYPASS_PROXY_SERVER: "${CF_BYPASS_PROXY_SERVER:-}"
+      REQUEST_TIMEOUT_SECS: "${REQUEST_TIMEOUT_SECS:-180}"
+      RUST_LOG: "${RUST_LOG:-info}"
     depends_on:
-      cfbypass:
-        condition: service_started
       django:
         condition: service_healthy
+      cfbypass:
+        condition: service_started
     restart: unless-stopped
     networks:
       - grok-network
 
   django:
     image: ${DOCKERHUB_IMAGE:-lisa666520/grok-mirror}:backend
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
     ports:
-      - "127.0.0.1:18100:8100"
+      - "127.0.0.1:43003:43003"
     environment:
-      - DJANGO_ENV=PRODUCTION
-      - DJANGO_DEBUG=${DJANGO_DEBUG:-false}
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY must be set}
-      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-django,localhost,127.0.0.1}
-      - DJANGO_CSRF_TRUSTED_ORIGINS=${DJANGO_CSRF_TRUSTED_ORIGINS:-}
-      - DJANGO_SESSION_COOKIE_SECURE=${DJANGO_SESSION_COOKIE_SECURE:-true}
-      - DJANGO_CSRF_COOKIE_SECURE=${DJANGO_CSRF_COOKIE_SECURE:-true}
-      - SHOW_GITHUB=${SHOW_GITHUB:-true}
-      - NO_PROXY=localhost,127.0.0.1,django,grok-mirror,cfbypass
-      - no_proxy=localhost,127.0.0.1,django,grok-mirror,cfbypass
-      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}
-      - GATEWAY_ADMIN_SECRET=${GATEWAY_ADMIN_SECRET:?GATEWAY_ADMIN_SECRET must be set}
-      - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY:?CREDENTIAL_ENCRYPTION_KEY must be set}
-      - ALLOW_REGISTER=${ALLOW_REGISTER:-false}
-      - FREE_ACCOUNT_USERNAME=${FREE_ACCOUNT_USERNAME:-free_account}
-      - CLOUDFLARE_TURNSTILE=${CLOUDFLARE_TURNSTILE:-disable}
-      - CLOUDFLARE_TURNSTILE_SITE_KEY=${CLOUDFLARE_TURNSTILE_SITE_KEY:-}
-      - CLOUDFLARE_TURNSTILE_SECRET_KEY=${CLOUDFLARE_TURNSTILE_SECRET_KEY:-}
-      - GROK_GATEWAY_URL=http://grok-mirror:${PORT:-41002}
-      - GUNICORN_WORKERS=${GUNICORN_WORKERS:-3}
-      - GUNICORN_THREADS=${GUNICORN_THREADS:-2}
+      DJANGO_ENV: "PRODUCTION"
+      DJANGO_DEBUG: "${DJANGO_DEBUG:-false}"
+      DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY must be set}"
+      DJANGO_ALLOWED_HOSTS: "${DJANGO_ALLOWED_HOSTS:-django,localhost,127.0.0.1}"
+      DJANGO_CSRF_TRUSTED_ORIGINS: "${DJANGO_CSRF_TRUSTED_ORIGINS:-}"
+      DJANGO_SESSION_COOKIE_SECURE: "${DJANGO_SESSION_COOKIE_SECURE:-true}"
+      DJANGO_CSRF_COOKIE_SECURE: "${DJANGO_CSRF_COOKIE_SECURE:-true}"
+      SHOW_GITHUB: "${SHOW_GITHUB:-true}"
+      NO_PROXY: "localhost,127.0.0.1,django,grok-mirror,cfbypass"
+      no_proxy: "localhost,127.0.0.1,django,grok-mirror,cfbypass"
+      ADMIN_USERNAME: "${ADMIN_USERNAME:-admin}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}"
+      GATEWAY_ADMIN_SECRET: "${GATEWAY_ADMIN_SECRET:?GATEWAY_ADMIN_SECRET must be set}"
+      CREDENTIAL_ENCRYPTION_KEY: "${CREDENTIAL_ENCRYPTION_KEY:?CREDENTIAL_ENCRYPTION_KEY must be set}"
+      API_TOKEN_TTL_SECONDS: "${API_TOKEN_TTL_SECONDS:-604800}"
+      ALLOW_REGISTER: "${ALLOW_REGISTER:-false}"
+      FREE_ACCOUNT_USERNAME: "${FREE_ACCOUNT_USERNAME:-free_account}"
+      GROK_GATEWAY_URL: "http://grok-mirror:${PORT:-43002}"
+      CLOUDFLARE_TURNSTILE: "${CLOUDFLARE_TURNSTILE:-disable}"
+      CLOUDFLARE_TURNSTILE_SITE_KEY: "${CLOUDFLARE_TURNSTILE_SITE_KEY:-}"
+      CLOUDFLARE_TURNSTILE_SECRET_KEY: "${CLOUDFLARE_TURNSTILE_SECRET_KEY:-}"
+      GUNICORN_WORKERS: "${GUNICORN_WORKERS:-3}"
+      GUNICORN_THREADS: "${GUNICORN_THREADS:-2}"
     volumes:
       - ./backend/logs:/app/backend/logs
       - ./backend/db:/app/backend/db
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/0x/user/version-cfg', timeout=2)"]
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:43003/0x/user/version-cfg', timeout=2)"
       interval: 5s
       timeout: 3s
       retries: 30
@@ -91,27 +82,29 @@ services:
     networks:
       - grok-network
 
-  # CloudFlare5sBypass 服务（可选，用于绕过 Cloudflare 5s 盾）
   cfbypass:
     image: ${DOCKERHUB_IMAGE:-lisa666520/grok-mirror}:cfbypass
-    build:
-      context: .
-      dockerfile: cfbypass/Dockerfile
+    command:
+      - uvicorn
+      - app:app
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "43004"
     ports:
-      - "127.0.0.1:18200:8200"
+      - "127.0.0.1:43004:43004"
     environment:
-      - TZ=Asia/Shanghai
-      - CF_BYPASS_HEADLESS=${CF_BYPASS_HEADLESS:-true}
-      - CF_BYPASS_MAX_WAIT_SECONDS=${CF_BYPASS_MAX_WAIT_SECONDS:-35}
-      - CF_BYPASS_PARTIAL_COOKIE_GRACE_SECONDS=${CF_BYPASS_PARTIAL_COOKIE_GRACE_SECONDS:-8}
-      - CF_BYPASS_NAVIGATION_RETRIES=${CF_BYPASS_NAVIGATION_RETRIES:-2}
-      - CF_BYPASS_SECRET=${GATEWAY_ADMIN_SECRET:?GATEWAY_ADMIN_SECRET must be set}
-      - CF_BYPASS_ALLOWED_HOSTS=${CF_BYPASS_ALLOWED_HOSTS:-grok.com,.grok.com}
+      TZ: "${TZ:-Asia/Shanghai}"
+      CF_BYPASS_HEADLESS: "${CF_BYPASS_HEADLESS:-true}"
+      CF_BYPASS_MAX_WAIT_SECONDS: "${CF_BYPASS_MAX_WAIT_SECONDS:-35}"
+      CF_BYPASS_PARTIAL_COOKIE_GRACE_SECONDS: "${CF_BYPASS_PARTIAL_COOKIE_GRACE_SECONDS:-8}"
+      CF_BYPASS_NAVIGATION_RETRIES: "${CF_BYPASS_NAVIGATION_RETRIES:-2}"
+      CF_BYPASS_SECRET: "${GATEWAY_ADMIN_SECRET:?GATEWAY_ADMIN_SECRET must be set}"
+      CF_BYPASS_ALLOWED_HOSTS: "${CF_BYPASS_ALLOWED_HOSTS:-grok.com,.grok.com}"
     shm_size: "1gb"
     restart: unless-stopped
     networks:
       - grok-network
-    # 如果不需要 CF Bypass 功能，可以注释掉此服务
 
 networks:
   grok-network:
